@@ -74,7 +74,7 @@ export default function BouqtHeader({ userEmail, isAdmin }: BouqtHeaderProps) {
 
           {/* Center nav — Browse only */}
           <nav className="hidden lg:flex items-center gap-7 text-sm flex-1 justify-center">
-            {[{ href: "/bouquets", label: "Browse" }].map((l) => (
+            {([] as { href: string; label: string }[]).map((l) => (
               <Link
                 key={l.href}
                 href={l.href}
@@ -181,19 +181,6 @@ export default function BouqtHeader({ userEmail, isAdmin }: BouqtHeaderProps) {
 
               {/* Nav links */}
               <nav className="flex-1 px-3 py-4 space-y-0.5">
-                {/* Browse — always visible */}
-                <Link
-                  href="/bouquets"
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
-                    isActive("/bouquets")
-                      ? "bg-[#fde8ec] text-[#E8748A] font-medium"
-                      : "text-stone-600 hover:bg-stone-100"
-                  }`}
-                >
-                  <ShoppingBag className="w-4 h-4 flex-shrink-0" />
-                  Browse bouquets
-                </Link>
-
                 {sidebarLinks.map(({ href, label, icon: Icon }) => (
                   <Link
                     key={href}

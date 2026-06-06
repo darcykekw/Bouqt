@@ -48,9 +48,9 @@ async function BouquetGrid({ searchParams }: { searchParams: Promise<FilterParam
     <>
       {available.length > 0 && (
         <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {available.map((b, i) => (
-            <StaggerItem key={b.id} className={i % 5 === 0 ? "sm:col-span-2 lg:col-span-1" : ""}>
-              <BouquetCard bouquet={b} large={i % 5 === 0} />
+          {available.map((b) => (
+            <StaggerItem key={b.id}>
+              <BouquetCard bouquet={b} />
             </StaggerItem>
           ))}
         </StaggerContainer>

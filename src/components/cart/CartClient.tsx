@@ -41,11 +41,7 @@ export default function CartClient({ featuredBouquets }: { featuredBouquets: Bou
     });
   }, []);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const err = params.get("error");
-    if (err) setError(decodeURIComponent(err));
-  }, []);
+  // Errors now come back as return values from placeCartOrder, not URL params.
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -56,7 +52,14 @@ export default function CartClient({ featuredBouquets }: { featuredBouquets: Bou
     formData.set("fulfillment", fulfillment);
     formData.set("save_address", saveAddress ? "true" : "false");
     try {
-      await placeCartOrder(formData);
+      const result = await placeCartOrder(formData);
+      if (result?.error) {
+        setError(result.error);
+        setPending(false);
+        return;
+      }
+      // On success placeCartOrder redirects (throws), so this line is only
+      // reached on unexpected non-redirect returns — clear cart defensively.
       clearCart();
     } catch (err) {
       if (isRedirectError(err)) throw err;

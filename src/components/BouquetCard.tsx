@@ -11,7 +11,7 @@ type BouquetCardProps = {
   large?: boolean;
 };
 
-export default function BouquetCard({ bouquet, href, large = false }: BouquetCardProps) {
+export default function BouquetCard({ bouquet, href }: BouquetCardProps) {
   const link = href ?? `/bouquets/${bouquet.id}`;
   const reduce = useReducedMotion();
   const isAvailable = bouquet.is_available && bouquet.stock_quantity > 0;
@@ -21,7 +21,7 @@ export default function BouquetCard({ bouquet, href, large = false }: BouquetCar
       <motion.div
         whileHover={reduce ? {} : { scale: 1.02 }}
         transition={{ duration: 0.25, ease: "easeOut" }}
-        className={`relative overflow-hidden rounded-2xl bg-stone-100 shadow-sm ${large ? "aspect-[3/4]" : "aspect-[4/3]"}`}
+        className="relative overflow-hidden rounded-2xl bg-stone-100 shadow-sm aspect-[4/3]"
       >
         {/* Photo */}
         {bouquet.photo_url ? (
@@ -31,6 +31,8 @@ export default function BouquetCard({ bouquet, href, large = false }: BouquetCar
             fill
             sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 33vw"
             className="object-cover transition-transform duration-700 group-hover:scale-105"
+            loading="lazy"
+            priority={false}
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-[#F3EFE9]">

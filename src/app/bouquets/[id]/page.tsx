@@ -2,7 +2,9 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { Button } from "@/components/ui/button";
 import AddToCartButton from "@/components/cart/AddToCartButton";
+import PlaceOrderButton from "@/components/cart/PlaceOrderButton";
 import { ChevronLeft } from "lucide-react";
 import FadeInUp from "@/components/motion/FadeInUp";
 
@@ -96,7 +98,10 @@ export default async function BouquetDetailPage({
                 <p className="text-sm text-stone-400 mb-4 font-light">
                   Add to your cart and keep browsing, or go straight to checkout.
                 </p>
-                <AddToCartButton bouquet={bouquet} />
+                <div className="flex flex-col gap-3">
+                  <AddToCartButton bouquet={bouquet} />
+                  <PlaceOrderButton bouquet={bouquet} />
+                </div>
               </>
             ) : (
               <div className="text-center py-4">

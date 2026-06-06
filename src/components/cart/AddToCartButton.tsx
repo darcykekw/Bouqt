@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { useCart } from "@/lib/store/cart";
 import { Bouquet } from "@/lib/types";
+import { createCartItem } from "@/lib/utils";
 import { ShoppingBag, Check, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -15,13 +16,7 @@ export default function AddToCartButton({ bouquet }: { bouquet: Bouquet }) {
   const existing = items.find((i) => i.bouquetId === bouquet.id);
 
   function handleAdd() {
-    addItem({
-      bouquetId: bouquet.id,
-      name: bouquet.name,
-      price: bouquet.price,
-      photo_url: bouquet.photo_url,
-      maxStock: bouquet.stock_quantity,
-    });
+    addItem(createCartItem(bouquet));
     setAdded(true);
     toast.success(`${bouquet.name} added to cart`);
     setTimeout(() => setAdded(false), 2000);

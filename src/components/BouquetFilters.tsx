@@ -22,13 +22,29 @@ export default function BouquetFilters() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Tracks whether the user is actively typing so the URL-sync effect
+  // doesn't overwrite the input during debounce.
+  const isTypingRef = useRef(false);
 
   const sort = searchParams.get("sort") ?? "newest";
-  const maxPrice = searchParams.get("maxPrice") ?? "";
-  const [searchValue, setSearchValue] = useState(searchParams.get("search") ?? "");
 
+  // NaN guard: only accept positive integers from the URL; fall back to "".
+  const maxPriceRaw = searchParams.get("maxPrice") ?? "";
+  const maxPriceParsed = parseInt(maxPriceRaw, 10);
+  const maxPrice =
+    !Number.isNaN(maxPriceParsed) && maxPriceParsed > 0 ? maxPriceRaw : "";
+
+  const [searchValue, setSearchValue] = useState(
+    searchParams.get("search") ?? ""
+  );
+
+  // Sync input value when URL changes due to external navigation (back/forward).
+  // The isTypingRef guard prevents overwriting the input while the user is
+  // mid-keystroke waiting for the debounce to fire.
   useEffect(() => {
-    setSearchValue(searchParams.get("search") ?? "");
+    if (!isTypingRef.current) {
+      setSearchValue(searchParams.get("search") ?? "");
+    }
   }, [searchParams]);
 
   const push = useCallback(
@@ -43,8 +59,10 @@ export default function BouquetFilters() {
 
   function handleSearch(value: string) {
     setSearchValue(value);
+    isTypingRef.current = true;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
+      isTypingRef.current = false;
       const params = new URLSearchParams(searchParams.toString());
       if (value.trim()) params.set("search", value.trim());
       else params.delete("search");

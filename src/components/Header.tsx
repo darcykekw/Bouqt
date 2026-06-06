@@ -24,7 +24,6 @@ export default function Header({ userEmail, isAdmin }: HeaderProps) {
       : "text-stone-600 hover:text-[#E8748A]";
 
   const navLinks = [
-    { href: "/bouquets", label: "Shop" },
     ...(userEmail ? [{ href: "/orders", label: "My Orders" }] : []),
     ...(userEmail ? [{ href: "/profile", label: "Profile" }] : []),
     ...(isAdmin ? [{ href: "/admin", label: "Admin" }] : []),

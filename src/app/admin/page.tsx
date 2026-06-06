@@ -1,4 +1,4 @@
-﻿import { redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Suspense } from "react";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; tab?: string; search?: string; status?: string; fulfillment?: string }>;
+  searchParams: Promise<{ error?: string; tab?: string; search?: string; status?: string; fulfillment?: string; page?: string }>;
 }) {
   const params = await searchParams;
   const supabase = await createClient();
@@ -36,37 +36,59 @@ export default async function AdminPage({
   if (profile?.role !== "admin") redirect("/bouquets");
 
   const activeTab = params.tab || "orders";
+  const pageSize = 50;
+  const currentPage = (() => {
+    const p = parseInt(params.page ?? "1", 10);
+    return Number.isNaN(p) || p < 1 ? 1 : p;
+  })();
+  const offset = (currentPage - 1) * pageSize;
 
-  // Fetch all orders with items (profile join removed — no FK between orders and profiles in schema cache)
+  // ── N+1 Fix: fetch all auth users once, build email map in memory ─────────
+  const { data: usersData } = await admin.auth.admin.listUsers({ perPage: 1000 });
+  const emailMap = new Map(
+    (usersData?.users ?? []).map((u) => [u.id, u.email ?? ""])
+  );
+
+  // ── Stats query (all orders, unfiltered) for accurate dashboard metrics ───
+  const { data: statsRaw } = await admin
+    .from("orders")
+    .select(
+      "id, status, delivery_fee, confirmed_at, order_items(quantity, price_snapshot, bouquet_id, bouquet:bouquets(name))"
+    );
+
+  // ── Display query (paginated, with filters) ───────────────────────────────
   let ordersQuery = admin
     .from("orders")
-    .select("*, order_items(*, bouquet:bouquets(name, price, photo_url))")
+    .select("*, order_items(*, bouquet:bouquets(name, price, photo_url))", { count: "exact" })
     .order("created_at", { ascending: false });
 
   if (params.status) ordersQuery = ordersQuery.eq("status", params.status);
   if (params.fulfillment) ordersQuery = ordersQuery.eq("fulfillment", params.fulfillment);
 
-  const { data: rawOrders } = await ordersQuery;
+  // When searching by email, skip DB pagination so the JS filter sees all rows
+  let rawOrders: Record<string, unknown>[] = [];
+  let totalCount = 0;
+  if (params.search) {
+    const { data } = await ordersQuery;
+    rawOrders = (data ?? []) as Record<string, unknown>[];
+    totalCount = rawOrders.length;
+  } else {
+    const { data, count } = await ordersQuery.range(offset, offset + pageSize - 1);
+    rawOrders = (data ?? []) as Record<string, unknown>[];
+    totalCount = count ?? 0;
+  }
+  const totalPages = Math.ceil(totalCount / pageSize);
 
-  // Fetch customer emails from auth (separate lookup since PostgREST can't resolve the relationship)
-  const customerIds = [...new Set((rawOrders ?? []).map((o: { customer_id: string }) => o.customer_id).filter(Boolean))];
-  const emailMap = new Map<string, string>();
-  await Promise.all(
-    customerIds.map(async (id) => {
-      const { data } = await admin.auth.admin.getUserById(id);
-      if (data?.user?.email) emailMap.set(id, data.user.email);
-    })
-  );
-
+  // ── Attach email to display orders ────────────────────────────────────────
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const allOrders = (rawOrders ?? []).map((o: any) => ({
+  const allOrders = rawOrders.map((o: any) => ({
     ...o,
     profile: { email: emailMap.get(o.customer_id as string) ?? null },
   }));
 
   // Client-side search filter (email)
   const filtered = params.search
-    ? allOrders?.filter((o) =>
+    ? allOrders.filter((o) =>
         (o.profile as { email: string } | null)?.email
           ?.toLowerCase()
           .includes(params.search!.toLowerCase())
@@ -82,15 +104,17 @@ export default async function AdminPage({
 
   const { data: bouquets } = await admin.from("bouquets").select("*").order("created_at", { ascending: false });
 
-  // Revenue stats
-  const confirmed = orders?.filter((o) => o.status === "confirmed") ?? [];
-  const pending = orders?.filter((o) => o.status === "pending") ?? [];
-  const totalRevenue = confirmed.reduce((sum, o) => sum + orderTotal(o), 0);
+  // ── Stats computed from ALL orders (not the paginated display set) ─────────
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const confirmed = (statsRaw ?? []).filter((o: any) => o.status === "confirmed");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pending = (statsRaw ?? []).filter((o: any) => o.status === "pending");
+  const totalRevenue = confirmed.reduce((sum: number, o: any) => sum + orderTotal(o), 0);
 
   // Top sellers: aggregate confirmed order_items in JS (no extra query)
   const soldMap = new Map<string, { name: string; totalSold: number }>();
   for (const order of confirmed) {
-    for (const item of (order.order_items ?? []) as { bouquet_id: string; quantity: number; bouquet?: { name: string } }[]) {
+    for (const item of ((order as any).order_items ?? []) as { bouquet_id: string; quantity: number; bouquet?: { name: string } }[]) {
       const existing = soldMap.get(item.bouquet_id);
       if (existing) {
         existing.totalSold += item.quantity;
@@ -112,12 +136,12 @@ export default async function AdminPage({
   });
 
   const chartData = last7.map((date) => {
-    const dayOrders = confirmed.filter(
-      (o) => o.confirmed_at?.startsWith(date)
-    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const dayOrders = confirmed.filter((o: any) => o.confirmed_at?.startsWith(date));
     return {
       date: new Date(date).toLocaleDateString("en-PH", { month: "short", day: "numeric" }),
-      revenue: dayOrders.reduce((s, o) => s + orderTotal(o), 0),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      revenue: dayOrders.reduce((s: number, o: any) => s + orderTotal(o), 0),
       orders: dayOrders.length,
     };
   });
@@ -134,9 +158,9 @@ export default async function AdminPage({
         <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">{params.error}</div>
       )}
 
-      {/* Stats */}
+      {/* Stats — always reflect ALL orders regardless of filter/page */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <StatCard icon={<ShoppingBag className="w-5 h-5 text-[#E8748A]" />} label="Total orders" value={orders?.length ?? 0} />
+        <StatCard icon={<ShoppingBag className="w-5 h-5 text-[#E8748A]" />} label="Total orders" value={(statsRaw ?? []).length} />
         <StatCard icon={<Clock className="w-5 h-5 text-amber-500" />} label="Pending" value={pending.length} highlight={pending.length > 0} />
         <StatCard icon={<CheckCheck className="w-5 h-5 text-green-500" />} label="Confirmed" value={confirmed.length} />
         <StatCard icon={<TrendingUp className="w-5 h-5 text-blue-500" />} label="Revenue" value={`₱${totalRevenue.toFixed(0)}`} isText />
@@ -346,6 +370,32 @@ export default async function AdminPage({
                   </table>
                 </div>
               </>
+            )}
+            {/* Pagination */}
+            {!params.search && totalPages > 1 && (
+              <div className="flex items-center justify-between px-4 py-3 border-t border-stone-100 bg-stone-50">
+                <p className="text-xs text-stone-500">
+                  Page {currentPage} of {totalPages} &middot; {totalCount} orders
+                </p>
+                <div className="flex gap-2">
+                  {currentPage > 1 && (
+                    <a
+                      href={`/admin?tab=orders${params.status ? `&status=${params.status}` : ""}${params.fulfillment ? `&fulfillment=${params.fulfillment}` : ""}&page=${currentPage - 1}`}
+                      className="px-3 py-1.5 rounded-lg border border-stone-200 text-xs text-stone-600 hover:bg-white transition-colors"
+                    >
+                      ← Prev
+                    </a>
+                  )}
+                  {currentPage < totalPages && (
+                    <a
+                      href={`/admin?tab=orders${params.status ? `&status=${params.status}` : ""}${params.fulfillment ? `&fulfillment=${params.fulfillment}` : ""}&page=${currentPage + 1}`}
+                      className="px-3 py-1.5 rounded-lg border border-stone-200 text-xs text-stone-600 hover:bg-white transition-colors"
+                    >
+                      Next →
+                    </a>
+                  )}
+                </div>
+              </div>
             )}
           </div>
         </div>

@@ -129,26 +129,7 @@ export default async function LandingPage() {
         </section>
       )}
 
-      {/* ── CTA Banner ────────────────────────────────────────────────── */}
-      <section className="bg-[#1C1917] py-24 relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -bottom-20 -left-20 w-96 h-96 rounded-full opacity-10"
-            style={{ background: "radial-gradient(circle, #E8748A 0%, transparent 70%)" }} />
-        </div>
-        <div className="relative max-w-3xl mx-auto px-6 lg:px-12 text-center">
-          <FadeInUp>
-            <h2 className="font-serif font-bold text-[#FAF8F5] mb-4"
-              style={{ fontSize: "clamp(1.75rem, 4vw, 2.75rem)" }}>
-              The right bouquet is waiting for you.
-            </h2>
-            <p className="text-[#A8A29E] text-lg font-light mb-8 leading-relaxed">
-              Browse our collection and place your order in minutes.
-              We&apos;ll take care of the rest.
-            </p>
-            <HeroArrowButton href="/bouquets">Browse bouquets</HeroArrowButton>
-          </FadeInUp>
-        </div>
-      </section>
+
 
     </div>
   );

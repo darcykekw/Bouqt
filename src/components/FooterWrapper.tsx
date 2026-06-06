@@ -16,8 +16,8 @@ export default function FooterWrapper() {
           "Fresh, handpicked bouquets made with care — ready for pickup or delivered to your door.",
       }}
       socialLinks={[
-        { name: "Instagram", href: "#" },
-        { name: "Facebook", href: "#" },
+        { name: "Instagram", href: "https://www.instagram.com/" },
+        { name: "Facebook", href: "https://www.facebook.com/" },
       ]}
       columns={[
         {
@@ -26,14 +26,6 @@ export default function FooterWrapper() {
             { name: "Browse Bouquets", Icon: Flower2, href: "/bouquets" },
             { name: "My Orders", Icon: Package, href: "/orders" },
             { name: "Register", Icon: UserPlus, href: "/register" },
-          ],
-        },
-        {
-          title: "Help",
-          links: [
-            { name: "How It Works", Icon: Info, href: "#" },
-            { name: "Pickup vs Delivery", Icon: Truck, href: "#" },
-            { name: "Contact Us", Icon: Mail, href: "#" },
           ],
         },
         {

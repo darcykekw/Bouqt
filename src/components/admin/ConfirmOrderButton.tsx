@@ -17,13 +17,13 @@ export default function ConfirmOrderButton({ orderId }: { orderId: string }) {
       <div className="flex items-center gap-1.5">
         <button
           onClick={handleConfirm}
-          className="px-2.5 py-1 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-semibold transition-colors"
+          className="px-2.5 py-1 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Yes, confirm
         </button>
         <button
           onClick={() => setStep("idle")}
-          className="px-2 py-1 rounded-lg text-stone-400 hover:text-stone-600 text-xs transition-colors"
+          className="px-2 py-1 rounded-lg text-stone-400 hover:text-stone-600 text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Cancel
         </button>

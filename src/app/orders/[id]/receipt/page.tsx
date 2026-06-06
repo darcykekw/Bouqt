@@ -4,7 +4,7 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { orderTotal } from "@/lib/types";
-import { Download, Printer, ChevronLeft, Flower2 } from "lucide-react";
+import { Download, ChevronLeft, Flower2 } from "lucide-react";
 
 export default async function ReceiptPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -122,11 +122,6 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
           <Link href={`/orders/${id}/receipt/pdf`} target="_blank" className="flex-1">
             <Button className="w-full bg-[#E8748A] hover:bg-[#d4607a] text-white rounded-full">
               <Download className="w-4 h-4 mr-2" />Download PDF
-            </Button>
-          </Link>
-          <Link href={`/orders/${id}/print`} target="_blank" className="flex-1">
-            <Button variant="outline" className="w-full rounded-full border-[#E7E5E1]">
-              <Printer className="w-4 h-4 mr-2" />Print
             </Button>
           </Link>
         </div>

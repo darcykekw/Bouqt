@@ -2,6 +2,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { orderTotal } from "@/lib/types";
 import { Flower2 } from "lucide-react";
+import PrintButton from "@/components/PrintButton";
 
 export default async function PrintOrderPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -28,12 +29,7 @@ export default async function PrintOrderPage({ params }: { params: Promise<{ id:
     <>
       {/* Print button — hidden when printing */}
       <div className="print:hidden flex justify-end p-4 bg-stone-50 border-b border-stone-100">
-        <button
-          onClick={() => window.print()}
-          className="px-5 py-2 bg-[#E8748A] text-white text-sm font-medium rounded-full hover:bg-[#d4607a] transition-colors"
-        >
-          Print this ticket
-        </button>
+        <PrintButton />
       </div>
 
       <div className="max-w-lg mx-auto px-8 py-8 font-sans text-stone-800">
